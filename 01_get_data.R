@@ -22,3 +22,8 @@ map_int(raw_list, nrow)
 #七日分を縦にくっ付ける
 raw <- bind_rows(raw_list)
 dim(raw)
+
+#保存（dataフォルダがなければ作る）
+dir.create("data",showWarnings = FALSE)
+saveRDS(raw, "data/statcast_2025_06_w1.rds")
+
