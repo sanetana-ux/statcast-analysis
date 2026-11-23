@@ -1,7 +1,7 @@
 library(tidyverse)
 
 #保存したデータを読み込む
-raw <- readRDS("data/statcast_2025_06_w1.rds")
+raw <- readRDS("data/statcast_2025_06.rds")
 
 #列名と型をざっと見る
 glimpse(raw)
@@ -19,7 +19,7 @@ raw |>
 
 library(tidyverse)
 
-raw <- readRDS("data/statcast_2025_06_w1.rds")
+raw <- readRDS("data/statcast_2025_06.rds")
 
 bip <- raw|>
   filter(type== "X") |>
@@ -71,8 +71,9 @@ ggplot(bip,aes(x = launch_angle, fill = result)) +
   )
 
 #角度と打球速度の散布図
-ggplot(bip,      , y= launch_angle, color = result)) +
+ggplot(bip, aes(x= launch_speed, y= launch_angle, color = result)) +
   geom_point(alpha = 0.4, size =1) +
+  facet_wrap(~result) +
   labs(
     title ="打球速度と打球角度",
     x     ="打球速度(mph)",
@@ -80,4 +81,38 @@ ggplot(bip,      , y= launch_angle, color = result)) +
     color ="結果"
 
   )
+
+hit_zone <- bip |>
+  mutate(
+    speed_bin = floor(launch_speed /5) *5,
+    angle_bin = floor(launch_angle /5) *5
+  )|>
+  group_by(speed_bin, angle_bin) |>
+  summarise(
+    n        = n(),
+    hit_rate = mean(is_hit),
+    .groups = "drop"
+  ) |>
+  filter(n >= 10)
+
+hit_zone
+
+ggplot(hit_zone ,aes(x = speed_bin, y = angle_bin, fill= hit_rate)) +
+  geom_tile() +
+  scale_fill_gradient(low = "white",high = "red",limits = c(0,1)) +
+  labs(
+    title = "打球速度・角度ごとのヒット率",
+    x     ="打球速度（mph）",
+    y     ="打球角度（度）",
+    fill  ="ヒット率"
+  )
+
+dir.create("output",showWarnings = FALSE)
+
+ggsave(
+  "output/hit_rate_heatmap.png",
+  width = 7,
+  height= 5,
+  dpi   =300
+)
 
